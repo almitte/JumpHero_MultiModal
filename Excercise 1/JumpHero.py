@@ -6,6 +6,7 @@ from os import listdir
 from os.path import isfile, join
 pygame.init()
 
+
 jump_sound = pygame.mixer.Sound("assets/sounds/jump.mp3")
 attack_sound = pygame.mixer.Sound("assets/sounds/sword.mp3")
 damage_sound = pygame.mixer.Sound("assets/sounds/damage.mp3")
