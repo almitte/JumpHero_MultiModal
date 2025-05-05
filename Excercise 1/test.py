@@ -279,6 +279,18 @@ def draw(window, background, bg_image, player, objects, offset_x):
 
     draw_hearts(window, player.health)
 
+    mouse_pos = pygame.mouse.get_pos()
+    click = pygame.mouse.get_pressed()[0]
+
+    # Pause-Button
+    if draw_small_button(window, "Pause", 150, 10, mouse_pos, click):
+        pause_menu(window)
+
+    # Restart-Button
+    if draw_small_button(window, "Restart", 260, 10, mouse_pos, click):
+        main(window, initial_startup=False)
+        return
+
 
 def handle_vertical_collision(player, objects, dy):
     collided_objects = []
@@ -396,8 +408,8 @@ def draw_small_button(win, text, x, y, mouse_pos, click):
     button_rect = pygame.Rect(x, y, width, height)
 
     hovered = button_rect.collidepoint(mouse_pos)
-    base_color = (80, 80, 80)
-    hover_color = (120, 120, 120)
+    base_color = (50, 50, 200)
+    hover_color = (70, 70, 255)
     color = hover_color if hovered else base_color
 
     pygame.draw.rect(win, color, button_rect, border_radius=6)
@@ -491,6 +503,7 @@ def pause_menu(window):
     paused = True
     clock = pygame.time.Clock()
     pygame.mixer.music.pause()
+    background, bg_image = get_background("8BitBackground.png")
 
     while paused:
         clock.tick(FPS)
@@ -503,8 +516,8 @@ def pause_menu(window):
                 quit()
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 click = True
-
-        window.fill((30, 30, 30))  # Simple dark background
+        for tile in background:
+            window.blit(bg_image, tile)
 
         font = pygame.font.SysFont(None, 60)
         text_surf = font.render("Paused", True, (255, 255, 255))
@@ -656,22 +669,9 @@ def main(window, initial_startup=True):
             death_screen(window)
             main(window, initial_startup = False)  # Restart game
             return  # exit current game loop after death screen
+
         
         draw(window, background, bg_image, player, objects, offset_x)
-
-        pygame.draw.rect(window, (0, 0, 0), (0, 0, 920, 50))
-
-        mouse_pos = pygame.mouse.get_pos()
-        click = pygame.mouse.get_pressed()[0]
-
-        # Pause-Button
-        if draw_small_button(window, "Pause", 150, 10, mouse_pos, click):
-            pause_menu(window)
-
-        # Restart-Button
-        if draw_small_button(window, "Restart", 260, 10, mouse_pos, click):
-            main(window, initial_startup=False)
-            return
         
         pygame.display.update()
 
