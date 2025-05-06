@@ -1,6 +1,3 @@
-import os
-import random
-import math
 import pygame
 from os import listdir
 from os.path import isfile, join
@@ -17,9 +14,9 @@ pygame.mixer.music.set_volume(0.1)  # Set volume to 10% (very quiet)
 pygame.mixer.music.play(-1, 0.0)  # Play music indefinitely
 
 
-pygame.display.set_caption("Platformer")
+pygame.display.set_caption("JumpHero")
 
-WIDTH, HEIGHT = 1000, 800
+WIDTH, HEIGHT = 920, 720
 FPS = 60
 PLAYER_VEL = 5
 
@@ -277,9 +274,19 @@ def draw(window, background, bg_image, player, objects, offset_x):
 
     player.draw(window, offset_x)
 
-    draw_hearts(window, player.health) 
+    draw_hearts(window, player.health)
 
-    pygame.display.update()
+    mouse_pos = pygame.mouse.get_pos()
+    click = pygame.mouse.get_pressed()[0]
+
+    # Pause-Button
+    if draw_small_button(window, "Pause", 150, 10, mouse_pos, click):
+        pause_menu(window)
+
+    # Restart-Button
+    if draw_small_button(window, "Restart", 260, 10, mouse_pos, click):
+        main(window, initial_startup=False)
+        return
 
 
 def handle_vertical_collision(player, objects, dy):
@@ -354,7 +361,6 @@ def win_screen(window):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-                quit()
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 click = True
 
@@ -393,6 +399,25 @@ def draw_button(win, text, y, mouse_pos, click):
 
     return hovered and click
 
+def draw_small_button(win, text, x, y, mouse_pos, click):
+    width, height = 90, 30
+    button_rect = pygame.Rect(x, y, width, height)
+
+    hovered = button_rect.collidepoint(mouse_pos)
+    base_color = (50, 50, 200)
+    hover_color = (70, 70, 255)
+    color = hover_color if hovered else base_color
+
+    pygame.draw.rect(win, color, button_rect, border_radius=6)
+    pygame.draw.rect(win, (255, 255, 255), button_rect, 1, border_radius=6)
+
+    font = pygame.font.SysFont(None, 22)
+    text_surf = font.render(text, True, (255, 255, 255))
+    text_rect = text_surf.get_rect(center=button_rect.center)
+    win.blit(text_surf, text_rect)
+
+    return hovered and click
+
 
 def death_screen(window):
     run = True
@@ -411,7 +436,6 @@ def death_screen(window):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-                quit()
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 click = True
 
@@ -438,6 +462,7 @@ def start_menu(window):
     run = True
     clock = pygame.time.Clock()
     background, bg_image = get_background("8BitBackground.png")
+    logo_image = pygame.image.load("assets/logo/jump_hero_logo_transparent.png").convert_alpha()
 
     while run:
         clock.tick(FPS)
@@ -447,13 +472,14 @@ def start_menu(window):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-                quit()
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 click = True
 
         # Draw the background
         for tile in background:
             window.blit(bg_image, tile)
+
+        window.blit(logo_image, (WIDTH // 2 - logo_image.get_width() // 2, 30))
 
         font = pygame.font.SysFont(None, 80)
 
@@ -462,10 +488,43 @@ def start_menu(window):
             pygame.mixer.music.unpause()
 
         if draw_button(window, "Close Game", HEIGHT // 2 + 100, mouse_pos, click):
-            run = False
-            pygame.mixer.music.unpause()
+            pygame.quit()
 
         pygame.display.update()
+
+def pause_menu(window):
+    paused = True
+    clock = pygame.time.Clock()
+    pygame.mixer.music.pause()
+    background, bg_image = get_background("8BitBackground.png")
+
+    while paused:
+        clock.tick(FPS)
+        mouse_pos = pygame.mouse.get_pos()
+        click = False
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                click = True
+        for tile in background:
+            window.blit(bg_image, tile)
+
+        font = pygame.font.SysFont(None, 60)
+        text_surf = font.render("Paused", True, (255, 255, 255))
+        text_rect = text_surf.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 100))
+        window.blit(text_surf, text_rect)
+
+        if draw_button(window, "Continue", HEIGHT // 2, mouse_pos, click):
+            paused = False
+            pygame.mixer.music.unpause()
+
+        if draw_button(window, "Close Game", HEIGHT // 2 + 100, mouse_pos, click):
+            pygame.quit()
+
+        pygame.display.update()
+
 
 def main(window, initial_startup=True):
     if initial_startup == True:
@@ -601,15 +660,17 @@ def main(window, initial_startup=True):
             death_screen(window)
             main(window, initial_startup = False)  # Restart game
             return  # exit current game loop after death screen
+
         
         draw(window, background, bg_image, player, objects, offset_x)
+        
+        pygame.display.update()
 
         if ((player.rect.right - offset_x >= WIDTH - scroll_area_width) and player.x_vel > 0) or (
                 (player.rect.left - offset_x <= scroll_area_width) and player.x_vel < 0):
             offset_x += player.x_vel
 
     pygame.quit()
-    quit()
 
 
 if __name__ == "__main__":
